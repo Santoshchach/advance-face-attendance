@@ -1,12 +1,9 @@
 
----
-
 # 🎯 Face Attendance System Using FaceAPI.js (Local Models)
 
 A **smart, secure, and offline face recognition–based attendance system** that automatically marks attendance using **real-time face recognition**.
 The system runs **entirely on local machine** without requiring an internet connection for recognition.
 
----
 
 ## 📌 Project Overview
 
@@ -19,7 +16,6 @@ This project solves that problem by using **FaceAPI.js** with **locally hosted m
 ✔ Fast and lightweight
 ✔ Admin dashboard & reports
 
----
 
 ## 🚀 Features
 
@@ -32,7 +28,6 @@ This project solves that problem by using **FaceAPI.js** with **locally hosted m
 * 🔐 **Privacy-Friendly (only face descriptors stored)**
 * ⚡ **Runs fully offline (local models)**
 
----
 
 ## 🧠 How the System Works
 
@@ -67,7 +62,6 @@ This project solves that problem by using **FaceAPI.js** with **locally hosted m
 * Stores date & time in database
 * Redirects to success page
 
----
 
 ## 🧾 User Registration Flow
 
@@ -83,7 +77,6 @@ This project solves that problem by using **FaceAPI.js** with **locally hosted m
 
 > ⚠️ Only **face descriptors** are stored — **no images**
 
----
 
 ## 🏗️ System Architecture
 
@@ -104,7 +97,6 @@ Browser (Frontend)
             └── SQLite Database
 ```
 
----
 
 ## 🧰 Technology Stack
 
@@ -130,7 +122,6 @@ Browser (Frontend)
 * Face Landmark 68 Model
 * Face Recognition Model
 
----
 
 ## 📂 Project Structure
 
@@ -162,7 +153,6 @@ Face-Attendance-System/
 └── README.md
 ```
 
----
 
 ## ⚙️ Installation & Setup
 
@@ -203,7 +193,6 @@ Admin can:
 * Access attendance reports
 * Export data to CSV / Excel
 
----
 
 ## 🔐 Security & Privacy
 
@@ -213,7 +202,6 @@ Admin can:
 * 🌐 No third-party API usage
 * 🛡️ Reduced data leakage risk
 
----
 
 ## 🎓 Use Cases
 
@@ -223,7 +211,6 @@ Admin can:
 * Training Institutes
 * Internship Attendance
 
----
 
 ## 📈 Future Enhancements
 
@@ -233,7 +220,6 @@ Admin can:
 * Mobile app integration
 * Cloud backup (optional)
 
----
 
 ## 👨‍💻 Author
 
@@ -241,7 +227,6 @@ Admin can:
 MCA Student | Python & AI Projects Developer
 📍 Maharashtra, India
 
----
 
 ## ⭐ Support
 
@@ -251,5 +236,4 @@ If you like this project:
 * 🍴 Fork it
 * 🧠 Learn & build on top of it
 
----
 
