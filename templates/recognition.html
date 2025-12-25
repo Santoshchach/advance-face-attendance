@@ -1,0 +1,138 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="flex flex-col items-center">
+    <h2 class="text-3xl font-bold mb-4 text-gray-800">Live Attendance</h2>
+
+    <div class="relative w-[640px] h-[480px] bg-black rounded-lg overflow-hidden shadow-2xl border-4 border-gray-700">
+        <video id="video" width="640" height="480" autoplay muted></video>
+        <canvas id="overlay" class="absolute top-0 left-0 w-full h-full"></canvas>
+    </div>
+
+    <div id="status-display" class="mt-4 text-xl font-bold text-blue-600">Initializing Core...</div>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const statusDisplay = document.getElementById('status-display');
+
+    let labeledDescriptors = [];
+    let faceMatcher;
+
+    // 1. Load Models & Users
+    async function init() {
+        try {
+            statusDisplay.innerText = "Loading Models...";
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri('/static/models'),
+                faceapi.nets.faceLandmark68Net.loadFromUri('/static/models'),
+                faceapi.nets.faceRecognitionNet.loadFromUri('/static/models')
+            ]);
+
+            statusDisplay.innerText = "Fetching Users...";
+            await loadUsers();
+
+            statusDisplay.innerText = "Starting Camera...";
+            startVideo();
+        } catch (e) {
+            console.error(e);
+            statusDisplay.innerText = "Initialization Failed";
+        }
+    }
+
+    // 2. Load Registered Users
+    async function loadUsers() {
+        const res = await fetch('/api/users');
+        const users = await res.json();
+
+        labeledDescriptors = users.map(user => {
+            const descriptor = new Float32Array(user.descriptor);
+            return new faceapi.LabeledFaceDescriptors(user.name + "::" + user.user_id, [descriptor]);
+        });
+
+        if (labeledDescriptors.length > 0) {
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+        } else {
+            statusDisplay.innerText = "No registered users found.";
+        }
+    }
+
+    function startVideo() {
+        navigator.mediaDevices.getUserMedia({ video: {} })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => statusDisplay.innerText = "Camera Access Denied");
+    }
+
+    // 3. Recognition Loop
+    video.addEventListener('play', () => {
+        const displaySize = { width: video.width, height: video.height };
+        faceapi.matchDimensions(overlay, displaySize);
+
+        let processing = false;
+
+        setInterval(async () => {
+            if (processing || !faceMatcher) return;
+            processing = true;
+
+            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptors();
+
+            const resizedDetections = faceapi.resizeResults(detections, displaySize);
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+            if (detections.length > 0) {
+                detections.forEach(async (detection, i) => {
+                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                    const box = resizedDetections[i].detection.box;
+
+                    // Draw Box
+                    const drawBox = new faceapi.draw.DrawBox(box, { label: bestMatch.toString() });
+                    drawBox.draw(overlay);
+
+                    // Mark Attendance if match is good
+                    if (bestMatch.label !== "unknown") {
+                        const [name, userId] = bestMatch.label.split("::");
+                        statusDisplay.innerText = `Identified: ${name}`;
+
+                        // Stop & Submit
+                        video.pause();
+                        await markAttendance(userId);
+                    }
+                });
+            }
+            processing = false;
+        }, 500); // Check every 500ms
+    });
+
+    async function markAttendance(userId) {
+        statusDisplay.innerText = "Marking Attendance...";
+        try {
+            const res = await fetch('/api/mark_attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+            const data = await res.json();
+
+            if (data.success && data.status === 'marked') {
+                window.location.href = `/attendance/success?name=${data.name}&date=${data.date}&time=${data.time}`;
+            } else if (data.status === 'exists') {
+                window.location.href = `/attendance/exists?name=${data.name}`;
+            } else {
+                statusDisplay.innerText = "Error: " + data.message;
+                setTimeout(() => video.play(), 2000);
+            }
+        } catch (e) {
+            console.error(e);
+            video.play();
+        }
+    }
+
+    init();
+</script>
+{% endblock %}

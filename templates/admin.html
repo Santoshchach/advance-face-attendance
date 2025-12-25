@@ -1,0 +1,164 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Admin Dashboard</h1>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+            <h3 class="text-gray-500 font-bold uppercase text-sm">Total Users</h3>
+            <p class="text-4xl font-bold text-gray-800" id="total-users">--</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+            <h3 class="text-gray-500 font-bold uppercase text-sm">Present Today</h3>
+            <p class="text-4xl font-bold text-gray-800" id="present-today">--</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
+            <h3 class="text-gray-500 font-bold uppercase text-sm">System Status</h3>
+            <p class="text-xl font-bold text-green-600">Online</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h2 class="text-xl font-bold mb-4 text-gray-700">Quick Actions</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="/register" class="flex items-center p-6 bg-white rounded-lg shadow hover:shadow-md transition group">
+            <div class="p-3 bg-blue-100 rounded-full mr-4 group-hover:bg-blue-200">
+                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-gray-800">Register New User</h3>
+                <p class="text-sm text-gray-500">Enroll a new employee face</p>
+            </div>
+        </a>
+
+        <a href="/reports" class="flex items-center p-6 bg-white rounded-lg shadow hover:shadow-md transition group">
+            <div class="p-3 bg-green-100 rounded-full mr-4 group-hover:bg-green-200">
+                <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-gray-800">View Reports</h3>
+                <p class="text-sm text-gray-500">Check attendance logs & export</p>
+            </div>
+        </a>
+        <!-- Registered Users Section -->
+        <h2 class="text-xl font-bold mb-4 text-gray-700 mt-12">Registered Users</h2>
+        <div class="bg-white rounded-lg shadow overflow-hidden border border-slate-200">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="p-4 font-semibold text-slate-600 text-sm">User ID</th>
+                        <th class="p-4 font-semibold text-slate-600 text-sm">Name</th>
+                        <th class="p-4 font-semibold text-slate-600 text-sm text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body" class="divide-y divide-slate-100">
+                    <!-- Rows will be injected here -->
+                    <tr>
+                        <td colspan="3" class="p-8 text-center text-slate-400">Loading users...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Fetch dashboard stats
+        function loadStats() {
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('total-users').innerText = data.total_users;
+                    document.getElementById('present-today').innerText = data.present_today;
+                })
+                .catch(err => console.error("Stats error", err));
+        }
+
+        // Load User List
+        function loadUsers() {
+            fetch('/api/users')
+                .then(res => res.json())
+                .then(users => {
+                    const tbody = document.getElementById('user-table-body');
+                    tbody.innerHTML = ''; // Clear loading/existing rows
+
+                    if (users.length === 0) {
+                        tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="p-8 text-center text-slate-500">
+                                No users registered yet.
+                            </td>
+                        </tr>`;
+                        return;
+                    }
+
+                    users.forEach(user => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-50 transition-colors group';
+                        tr.innerHTML = `
+                        <td class="p-4 text-slate-700 font-medium">${user.user_id}</td>
+                        <td class="p-4 text-slate-600">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                                ${user.name}
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="deleteUser('${user.user_id}', '${user.name}')" 
+                                class="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+                                title="Delete User">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                        </td>
+                    `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    console.error("Error loading users", err);
+                    document.getElementById('user-table-body').innerHTML = `
+                    <tr><td colspan="3" class="p-4 text-center text-red-500">Failed to load users</td></tr>`;
+                });
+        }
+
+        // Delete User Action
+        function deleteUser(userId, userName) {
+            if (confirm(`Are you sure you want to permanently delete user "${userName}" (${userId})? This cannot be undone.`)) {
+                fetch(`/api/delete_user/${userId}`, {
+                    method: 'DELETE'
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Refresh data
+                            loadUsers();
+                            loadStats();
+                            // Optional: Show a toast/alert
+                            alert("User deleted successfully.");
+                        } else {
+                            alert("Error: " + data.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Delete error", err);
+                        alert("An error occurred while deleting.");
+                    });
+            }
+        }
+
+        // Initial Load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadUsers();
+        });
+    </script>
+    {% endblock %}

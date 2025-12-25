@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+    <h2 class="text-2xl font-bold mb-6 border-b pb-4">Register New User</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Left: Form -->
+        <div class="space-y-6">
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">Full Name</label>
+                <input type="text" id="name"
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:border-blue-500"
+                    placeholder="e.g. John Doe">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">User ID (Unique)</label>
+                <input type="text" id="user_id"
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:border-blue-500"
+                    placeholder="e.g. 101">
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded text-sm text-blue-800">
+                <p class="font-bold">Instructions:</p>
+                <ul class="list-disc list-inside mt-1">
+                    <li>Allow camera access.</li>
+                    <li>Ensure good lighting.</li>
+                    <li>Click <strong>Capture Face</strong> to enroll.</li>
+                </ul>
+            </div>
+
+            <button id="capture-btn"
+                class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                Capture & Register
+            </button>
+            <div id="message" class="hidden p-3 rounded text-center font-bold"></div>
+        </div>
+
+        <!-- Right: Camera -->
+        <div class="relative flex flex-col items-center">
+            <div class="relative w-[400px] h-[300px] bg-black rounded-lg overflow-hidden border-2 border-gray-200">
+                <video id="video" width="400" height="300" autoplay muted></video>
+                <canvas id="overlay" class="absolute top-0 left-0"></canvas>
+            </div>
+            <p id="status" class="mt-2 text-gray-500 italic">Loading models...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const captureBtn = document.getElementById('capture-btn');
+    const statusText = document.getElementById('status');
+    const messageDiv = document.getElementById('message');
+
+    let modelsLoaded = false;
+
+    // Load Models
+    Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri('/static/models'),
+        faceapi.nets.faceLandmark68Net.loadFromUri('/static/models'),
+        faceapi.nets.faceRecognitionNet.loadFromUri('/static/models')
+    ]).then(startVideo).catch(err => {
+        console.error(err);
+        statusText.innerText = "Error loading models.";
+    });
+
+    function startVideo() {
+        navigator.mediaDevices.getUserMedia({ video: {} })
+            .then(stream => {
+                video.srcObject = stream;
+                modelsLoaded = true;
+                statusText.innerText = "Camera Ready. Align face.";
+            })
+            .catch(err => statusText.innerText = "Camera denied.");
+    }
+
+    captureBtn.addEventListener('click', async () => {
+        if (!modelsLoaded) return;
+        const name = document.getElementById('name').value;
+        const userId = document.getElementById('user_id').value;
+
+        if (!name || !userId) {
+            showMessage("Please enter Name and ID", "red");
+            return;
+        }
+
+        statusText.innerText = "Detecting face...";
+
+        // Detect Face
+        const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+
+        if (!detections) {
+            showMessage("No face detected! Try again.", "red");
+            return;
+        }
+
+        // Send to API
+        const descriptor = Array.from(detections.descriptor);
+
+        try {
+            captureBtn.disabled = true;
+            captureBtn.innerText = "Saving...";
+
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, user_id: userId, descriptor })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showMessage("Success! User registered.", "green");
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showMessage("Error: " + data.message, "red");
+                captureBtn.disabled = false;
+                captureBtn.innerText = "Capture & Register";
+            }
+        } catch (e) {
+            showMessage("Server Error", "red");
+            captureBtn.disabled = false;
+        }
+    });
+
+    function showMessage(msg, color) {
+        messageDiv.innerText = msg;
+        messageDiv.className = `p-3 rounded text-center font-bold bg-${color}-100 text-${color}-700`;
+        messageDiv.classList.remove('hidden');
+    }
+</script>
+{% endblock %}

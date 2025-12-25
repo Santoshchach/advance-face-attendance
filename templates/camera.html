@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header Section -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Camera Access</h1>
+        <p class="mt-2 text-slate-600 max-w-lg mx-auto">
+            Please verify your camera is working correctly before proceeding to attendance marking.
+        </p>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+
+        <!-- Toolbar / Status Bar -->
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-slate-300 status-indicator"></span>
+                <span class="text-sm font-medium text-slate-600" id="status-label">Ready to connect</span>
+            </div>
+            <div class="flex gap-2">
+                <span class="material-symbols-outlined text-slate-400 text-sm">videocam_off</span>
+            </div>
+        </div>
+
+        <!-- Camera Viewport / Container -->
+        <div class="relative bg-slate-900 aspect-video flex items-center justify-center group overflow-hidden">
+            <!-- Actual Camera Container (Preserved ID) -->
+            <div id="camera-container" class="relative w-full h-full flex items-center justify-center">
+
+                <!-- Video Element (Preserved ID) -->
+                <!-- Added object-cover for better fit -->
+                <video id="video" class="w-full h-full object-cover opacity-50 transition-opacity duration-700" autoplay
+                    muted playsinline></video>
+
+                <!-- Status Overlay (Preserved ID) -->
+                <div id="status-overlay"
+                    class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-10 bg-black/40 backdrop-blur-sm transition-all duration-500">
+                    <div
+                        class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-white/20 shadow-lg">
+                        <span class="material-symbols-outlined text-white text-3xl">photo_camera</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-1">Camera Feed</h3>
+                    <p class="text-slate-200 text-sm">Waiting for permission to start...</p>
+                </div>
+            </div>
+
+            <!-- Grid Overlay (Visual Enhancement) -->
+            <div
+                class="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:100px_100px]">
+            </div>
+        </div>
+
+        <!-- Action Footer -->
+        <div class="p-8 flex flex-col sm:flex-row items-center justify-center gap-4 bg-white">
+            <button id="start-btn"
+                class="group relative inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 text-white font-semibold rounded-xl text-lg shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-blue-600/30 hover:scale-[1.02] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">
+                <span class="material-symbols-outlined">play_circle</span>
+                Start Camera
+            </button>
+
+            <a href="/recognition"
+                class="group inline-flex items-center gap-2 px-8 py-3.5 bg-slate-100 text-slate-700 font-semibold rounded-xl text-lg hover:bg-slate-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2">
+                <span
+                    class="material-symbols-outlined text-slate-500 group-hover:text-slate-700 transition-colors">face</span>
+                Go to Recognition
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const statusOverlay = document.getElementById('status-overlay');
+    const startBtn = document.getElementById('start-btn');
+    const statusIndicator = document.querySelector('.status-indicator');
+    const statusLabel = document.getElementById('status-label');
+
+    startBtn.addEventListener('click', async () => {
+        try {
+            // Update UI for loading state
+            statusOverlay.innerHTML = `
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                <h3 class="text-xl font-bold text-white">Requesting Access...</h3>
+            `;
+            statusLabel.innerText = "Connecting...";
+            statusIndicator.classList.remove('bg-slate-300');
+            statusIndicator.classList.add('bg-yellow-400', 'animate-pulse');
+
+            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+            video.srcObject = stream;
+
+            // Success State
+            video.classList.remove('opacity-50');
+            statusOverlay.classList.add('hidden');
+            startBtn.classList.add('hidden');
+
+            // Header status update
+            statusLabel.innerText = "Camera Active";
+            statusIndicator.classList.remove('bg-yellow-400', 'animate-pulse');
+            statusIndicator.classList.add('bg-green-500');
+
+        } catch (err) {
+            console.error(err);
+
+            // Error State
+            statusOverlay.innerHTML = `
+                <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 ring-1 ring-red-500/50">
+                    <span class="material-symbols-outlined text-red-500 text-3xl">videocam_off</span>
+                </div>
+                <h3 class="text-xl font-bold text-white">Access Denied</h3>
+                <p class="text-red-200 text-sm mt-1">Please allow camera permissions.</p>
+            `;
+            statusOverlay.classList.remove('hidden');
+
+            statusLabel.innerText = "Connection Failed";
+            statusIndicator.classList.remove('bg-slate-300', 'bg-yellow-400', 'animate-pulse');
+            statusIndicator.classList.add('bg-red-500');
+        }
+    });
+</script>
+{% endblock %}

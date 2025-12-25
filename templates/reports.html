@@ -1,0 +1,160 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Attendance Records</h1>
+        <div class="space-x-2">
+            <button onclick="exportTableToCSV('attendance.csv')"
+                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 font-bold text-sm">
+                Export CSV
+            </button>
+            <button onclick="exportTableToExcel('attendance.xls')"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold text-sm">
+                Export Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Search/Filter -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6 flex gap-4">
+        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search by name..."
+            class="border rounded px-4 py-2 w-full focus:outline-none focus:border-blue-500">
+        <input type="date" id="dateInput" onchange="filterTable()"
+            class="border rounded px-4 py-2 focus:outline-none focus:border-blue-500">
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full leading-normal" id="attendanceTable">
+            <thead>
+                <tr>
+                    <th
+                        class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Name
+                    </th>
+                    <th
+                        class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        User ID
+                    </th>
+                    <th
+                        class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Date
+                    </th>
+                    <th
+                        class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Time
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Rows will be populated by JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Fetch records
+    fetch('/api/records')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('tableBody');
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm font-bold text-gray-900">
+                        ${row.name}
+                    </td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-gray-500">
+                        ${row.user_id}
+                    </td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-gray-900">
+                        ${row.date}
+                    </td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-blue-600 font-bold">
+                        ${row.time}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+
+    function filterTable() {
+        const input = document.getElementById("searchInput");
+        const dateInput = document.getElementById("dateInput");
+        const filter = input.value.toUpperCase();
+        const dateFilter = dateInput.value;
+        const table = document.getElementById("attendanceTable");
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            let tdName = tr[i].getElementsByTagName("td")[0];
+            let tdDate = tr[i].getElementsByTagName("td")[2];
+            if (tdName && tdDate) {
+                const txtValue = tdName.textContent || tdName.innerText;
+                const dateValue = tdDate.textContent || tdDate.innerText;
+
+                const matchesName = txtValue.toUpperCase().indexOf(filter) > -1;
+                const matchesDate = dateFilter === "" || dateValue.indexOf(dateFilter) > -1;
+
+                if (matchesName && matchesDate) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    // Simple CSV Export
+    function exportTableToCSV(filename) {
+        let csv = [];
+        let rows = document.querySelectorAll("table tr");
+
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++)
+                row.push(cols[j].innerText);
+            csv.push(row.join(","));
+        }
+
+        downloadCSV(csv.join("\\n"), filename);
+    }
+
+    function downloadCSV(csv, filename) {
+        let csvFile;
+        let downloadLink;
+        csvFile = new Blob([csv], { type: "text/csv" });
+        downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+    }
+
+    // Excel Export (Hack via Blob)
+    function exportTableToExcel(filename) {
+        let downloadLink;
+        const dataType = 'application/vnd.ms-excel';
+        const tableSelect = document.getElementById('attendanceTable');
+        const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+
+        filename = filename ? filename : 'excel_data.xls';
+        downloadLink = document.createElement("a");
+        document.body.appendChild(downloadLink);
+
+        if (navigator.msSaveOrOpenBlob) {
+            var blob = new Blob(['\ufeff', tableHTML], {
+                type: dataType
+            });
+            navigator.msSaveOrOpenBlob(blob, filename);
+        } else {
+            downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+            downloadLink.download = filename;
+            downloadLink.click();
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Attendance System</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Face API -->
+    <script src="/static/js/face-api.min.js"></script>
+
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+        rel="stylesheet" />
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-sans);
+        }
+
+        /* Material Symbols Class */
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            /* Preferred icon size */
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Data & Branding -->
+                <a href="/" class="flex items-center gap-2 group">
+                    <div class="bg-blue-600 text-white p-1.5 rounded-lg group-hover:bg-blue-700 transition-colors">
+                        <span class="material-symbols-outlined align-middle">face_5</span>
+                    </div>
+                    <span
+                        class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                        SmartAttendance
+                    </span>
+                </a>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center gap-1">
+                    <a href="/"
+                        class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">videocam</span>
+                        Camera
+                    </a>
+                    <a href="/register"
+                        class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">person_add</span>
+                        Register
+                    </a>
+                    <a href="/recognition"
+                        class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">face</span>
+                        Recognition
+                    </a>
+                    <a href="/reports"
+                        class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">bar_chart</span>
+                        Reports
+                    </a>
+                    <div class="h-6 w-px bg-slate-200 mx-2"></div>
+                    <a href="/admin"
+                        class="flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm hover:shadow">
+                        <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                        Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-slate-500 text-sm">
+                Powered by <span class="font-semibold text-slate-700">Smart Systems</span> &copy; 2025
+            </p>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
