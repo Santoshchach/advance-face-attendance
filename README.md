@@ -1,6 +1,4 @@
-
 # 🎯 Face Attendance System Using FaceAPI.js (Local Models)
-
 A **smart, secure, and offline face recognition–based attendance system** that automatically marks attendance using **real-time face recognition**.
 The system runs **entirely on local machine** without requiring an internet connection for recognition.
 
